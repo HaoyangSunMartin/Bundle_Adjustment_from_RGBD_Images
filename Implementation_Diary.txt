@@ -1,0 +1,146 @@
+22/JUNE/2022
+Haoyang Sun
+
+Start of the Implementation:
+I copied the files from the exercise_1 and reconfigured the CMakeLists.txt
+I have added the rgbd_dataset_freiburg1_room and rgbd_dataset_freiburg3_long_office_household datasets
+to the ../Data folder
+
+I will add a file named StreamManage.h to manage the RBG-D Stream. 
+I will add a class named CameraIntrinsics which dedicates to record the camera intrinsics of a RBG-D stream. (check)
+I will add a class named Chunk which mimics the chunk in the paper.
+I will add a library SIFT to do Feature Recognition for me. 
+I will implement a function named: SIFT(RBG Image) which outputs a list of features and its values.
+
+I expect to get as result:
+	N .off files per chunk
+
+
+24/JUNE/2022
+Haoyang Sun
+
+How to set up the OpenCV Library in Windows:
+1. download the latest OpenCV file from https://sourceforge.net/projects/opencvlibrary/files/opencv-win/
+2. extract the file
+3. create a build folder in the opencv/sources folder
+4. create a OpenCV folder in the 3D-Scanning\Libs folder
+5. run CMAKE to configure: set the INSTALL_PREFIX to Libs\OpenCV
+6. do configure, generate, and open project
+7. set to release x64 mode
+8. build ALL_BUILD and INSTALL
+9. you should see many files in the OpenCV folder
+10. CMAKE configure the Final_Project, Configure the OPENCV_DIR varriable to the ????\3DScanning\Libs\OpenCV\x64\vc16\lib folder
+11. generate and open Project in CMAKE
+12. now you are in Visual Studio, set to release x64, go to view-> other windows -> property manager 
+13.  right click release|x64 and go to Properties
+14. in C/C++->General->Additional Include Directories, add a path to the OpenCV\include
+15. in Linker->General-> Additional Library Directories, add a path to the OpenCV\x64\vc16\lib
+16.in Linker->Input -> Additional Dependencies, add the filename of XXXXcore.lib (look this up in the OpenCV\x64\vc16\lib)
+17. now you can use the command: #include "opencv2\core.hpp" in the main.cpp files.
+
+26/JUNE/2022
+Haoyang Sun
+
+I automated the CMakeLists.txt so that steps of set-up after Nr.11 are not needed.
+I have also included additional libraries: opencv_features2d and opencv_highgui.
+I have modified the VirtualSensor.h file so that the trajectory will not be preset.
+I have achieved SIFT feature detection(on a gray scale 2D picture) in a toy code(not written here), but haven't yet integrated in the main codes.
+I have added default constructors for VirtualSensor and CameraIntrinsic, but the default one should never be used!
+
+29/JUNE/2022
+Akbar Suriaganda
+Implemented feature extraction and matching between two frames.
+The matched features can be visualized.
+
+30/JUNE/2022
+Rohan Fernandez
+Added a function to load the good matches amongst all image pairs
+It takes a lot of time to store these matches in the start and hence have commented it
+There are a total of 798 images and 318003 pairs
+
+06/JULY/2022
+Haoyang Sun
+
+Summary of Meeting:
+we decide to first implement a prototype of the full pipeline.
+we take in two pictures and we caculate the 3d coordinates, and then we caculate the loss function basing on the features, and then optimize the pose of the camera. 
+Then transform the point cloud and merg them together.
+
+Loss function: Musfira, Akbar
+Optimization: Rohan 
+Merging Pointclouds and Pipeline Structure: Haoyang Sun
+
+main focus this week: 
+complete the loss function
+complete the visualization of merging two point clouds together.（completed）
+lay out the foundation code structure of optimization.
+
+07/JULY/2022
+Haoyang Sun
+
+I attempted to merg the code in the excercise01 with out current structure, but failed.
+Any attempt to replace Vertex[] with a dynamic data structure like vector<Vertex> will result in destroying the stack.
+So I decide to stick to using Vertex[].
+
+08/JULY/2022
+Haoyang Sun
+
+I completed the code on merging the two pointclouds together.
+However, source inaccessible exceptions are still thrown at the end. 
+Even though the code is working(HHHresult.off file is outputed in the Build folder), this implies potential risks to the code.
+I will check on this another day.
+
+Summary of the changes on merging the point cloud:
+RBG_DStream.Init() will init the stream with current frame index with -1;
+RBG_DStream.ProcessNextFrame() will increment the index and load the corresponding frame.
+RBG_DStream.PrintPointCloud() will print out the point cloud in the HHHresult.off file in the Build folder.
+calling RBG_DStream.ProcessNextFrame() will load the next frame.
+calling RBG_DStream.PrintPointCloud() again will append to the HHHresult.off file, which merges the two point clouds.
+one thing need to pay attention to is that we need to preset the nVertices in oder for this to work. this can be implemented later when we are merging multiple frames together
+
+08/JULY/2022
+Rohan 
+Added the Flann lib and uncommented the inclusion of ceres and glog
+The above are needed for optimization. Added a Optimizer.h file which includes the functions of the ICP optimizer.
+We will use point to point and the ICPCeresOptimizer.
+Further addition of other depended files include the PointCloud.h, NearestNeighbor.h file used in Ex5 as we refer to ex 5 for optimization
+
+08/JULY/2022
+Akbar Suriaganda
+I worked with Musfira on the LossFunction.
+We created a new branch "LossFunction" so we can work together without pushing unclean code.
+The Constraint class in which the energy is calcuated is implemented. Another header file (LossFunction.h) was created.
+To test it we included Ceres to use its optimization (Ceres is now also added by others into cmake).
+Testing revealed some errors with Eigen::Matrix.
+Now we are currently testing to calculate the energy without matrices.
+
+12/JULY/2022
+Rohan 
+Fixed Debug build with ceres::problem used, edited the cmake lists file with post build events of glog dlls.
+Should now work on both Release and Debug configs.
+
+26/JULY/2022
+Akbar
+Added Timer class to measure performance.
+Checked out OpenMP, overall performance improved by approx. 4. But randomly crashes on Release.
+To use OpenMP go to project settings>C/C++>Languages>Open MP Support> set it to yes.
+
+28/JULY/2022
+Akbar
+Two approaches of storing the points are added: OccupancyGrid and Octree.
+Which print type to use can be set in the printType member variable of RBG_DStream.
+The new ones can't be used if previous frames are also updated.
+
+29/JULY/2022
+Akbar
+Sliding Window implemented.
+The size the updating window and the reference frames can be set through the member variables of RBG_DStream.
+
+29/JULY/2022
+Haoyang Sun
+Fixed the problems in the ground truth reading by implementing the nearest neighbour look up
+
+
+30/JULY/2022
+Haoyang Sun
+Fixed the problem that the ground truth trajectory and the estimated pose does not correspond to each other. 
